@@ -1,4 +1,5 @@
 import tensorflow as tf
+from tensorflow import keras
 import numpy as np
 import datetime
 from .utils.memories import ReplayMemory, RNNReplayMemory, MultiStepsBuffer

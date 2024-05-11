@@ -1,5 +1,5 @@
 import tensorflow as tf
-import tensorflow_addons as tfa
+# import tensorflow_addons as tfa
 
 class AdversarialModelAgregator(tf.keras.Model):
     def call(self, outputs):
@@ -13,6 +13,25 @@ class AdversarialModelAgregator(tf.keras.Model):
         outputs = tf.expand_dims(outputs["value"], axis = 1) + outputs["actions"] - tf.math.reduce_mean(outputs["actions"], axis = 1, keepdims=True)
         return outputs
 
+
+class CustomNoisyDense(tf.keras.layers.Layer):
+    def __init__(self, units, sigma=0.1, **kwargs):
+        super(CustomNoisyDense, self).__init__(**kwargs)
+        self.units = units
+        self.sigma = sigma
+
+    def build(self, input_shape):
+        self.w = self.add_weight(shape=(input_shape[-1], self.units),
+                                 initializer='random_normal',
+                                 trainable=True)
+        self.b = self.add_weight(shape=(self.units,), initializer='zeros', trainable=True)
+
+    def call(self, inputs, training=False):
+        if training:
+            W = self.w + tf.random.normal(self.w.shape, stddev=self.sigma)
+        else:
+            W = self.w
+        return tf.matmul(inputs, W) + self.b
 
 
 class ModelBuilder():
@@ -31,7 +50,8 @@ class ModelBuilder():
 
     
     def dense(self, *args, **kwargs):
-        if self.noisy: return tfa.layers.NoisyDense(*args, sigma= 0.1, **kwargs)
+        # if self.noisy: return tfa.layers.NoisyDense(*args, sigma= 0.1, **kwargs)
+        if self.noisy: return CustomNoisyDense(*args, sigma= 0.1, **kwargs)
         return tf.keras.layers.Dense(*args, **kwargs)
         
 
