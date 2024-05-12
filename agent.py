@@ -83,7 +83,7 @@ class Rainbow:
         self.model = model_builder.build_model(trainable= True)
         self.model.build(input_shape)
         self.model.compile(
-            optimizer= tf.keras.optimizers.legacy.Adam(self.learning_rate, epsilon= 1.5E-4)
+            optimizer= tf.keras.optimizers.Adam(self.learning_rate, epsilon= 1.5E-4)
         )
 
         self.target_model = model_builder.build_model(trainable= False)
