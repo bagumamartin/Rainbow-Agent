@@ -83,6 +83,7 @@ class Rainbow:
         self.model = model_builder.build_model(trainable= True)
         self.model.build(input_shape)
         self.model.compile(
+            # optimizer= tf.keras.optimizers.legacy.Adam(self.learning_rate, epsilon= 1.5E-4)
             optimizer= tf.keras.optimizers.Adam(self.learning_rate, epsilon= 1.5E-4)
         )
 
@@ -226,7 +227,9 @@ class Rainbow:
             loss_value = tf.math.reduce_mean(
                 tf.square(td_errors)*tf.cast(weights, tf.float32)
             )
-        self.model.optimizer.minimize(loss_value, self.model.trainable_weights, tape = tape)
+        # self.model.optimizer.minimize(loss_value, self.model.trainable_weights, tape = tape)
+        gradients = tape.gradient(loss_value, self.model.trainable_weights)
+        self.model.optimizer.apply_gradients(zip(gradients, self.model.trainable_weights))
         return loss_value, td_errors
 
     @tf.function
@@ -292,7 +295,9 @@ class Rainbow:
             td_errors_weighted = td_errors *tf.cast(weights, tf.float32)
             loss_value = tf.math.reduce_mean(td_errors_weighted)
         
-        self.model.optimizer.minimize(loss_value, self.model.trainable_weights, tape = tape)
+        # self.model.optimizer.minimize(loss_value, self.model.trainable_weights, tape = tape)
+        gradients = tape.gradient(loss_value, self.model.trainable_weights)
+        self.model.optimizer.apply_gradients(zip(gradients, self.model.trainable_weights))
         return loss_value, td_errors
 
     def save(self, path, **kwargs):
