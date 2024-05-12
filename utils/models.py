@@ -32,6 +32,24 @@ class CustomNoisyDense(tf.keras.layers.Layer):
         else:
             W = self.w
         return tf.matmul(inputs, W) + self.b
+    
+
+class Conv2Plus1D(tf.keras.layers.Layer):
+    def __init__(self, filters, kernel_size, padding='same'):
+        super(Conv2Plus1D, self).__init__()
+        self.seq = tf.keras.Sequential([
+            # Spatial decomposition
+            tf.keras.layers.Conv3D(filters=filters,
+                          kernel_size=(1, kernel_size[1], kernel_size[2]),
+                          padding=padding),
+            # Temporal decomposition
+            tf.keras.layers.Conv3D(filters=filters,
+                          kernel_size=(kernel_size[0], 1, 1),
+                          padding=padding)
+        ])
+
+    def call(self, x):
+        return self.seq(x)
 
 
 class ModelBuilder():
@@ -55,9 +73,32 @@ class ModelBuilder():
         return tf.keras.layers.Dense(*args, **kwargs)
         
 
+    # def build_model(self, trainable = True):
+    #     if self.recurrent: inputs = tf.keras.layers.Input(shape=(self.window, self.nb_states))
+    #     else : inputs = tf.keras.layers.Input(shape=(self.nb_states,))
+    #     main_stream = inputs
     def build_model(self, trainable = True):
-        if self.recurrent: inputs = tf.keras.layers.Input(shape=(self.window, self.nb_states))
-        else : inputs = tf.keras.layers.Input(shape=(self.nb_states,))
+        if self.recurrent: 
+            inputs = tf.keras.layers.Input(shape=(self.window, self.nb_states))
+            # Apply the Conv2Plus1D layer
+            inputs = Conv2Plus1D(filters=32, kernel_size=(3, 3, 3))(inputs)
+            inputs = tf.keras.layers.MaxPooling3D(pool_size=(2, 1, 1))(inputs)
+            inputs = Conv2Plus1D(filters=64, kernel_size=(3, 3, 3))(inputs)
+            inputs = tf.keras.layers.MaxPooling3D(pool_size=(2, 1, 1))(inputs)
+
+            # Flatten and add dense layers
+            inputs = tf.keras.layers.Flatten()(inputs)
+        else : 
+            inputs = tf.keras.layers.Input(shape=(self.nb_states,))
+            # Apply the Conv2Plus1D layer
+            inputs = Conv2Plus1D(filters=32, kernel_size=(3, 3, 3))(inputs)
+            inputs = tf.keras.layers.MaxPooling3D(pool_size=(2, 1, 1))(inputs)
+            inputs = Conv2Plus1D(filters=64, kernel_size=(3, 3, 3))(inputs)
+            inputs = tf.keras.layers.MaxPooling3D(pool_size=(2, 1, 1))(inputs)
+
+            # Flatten and add dense layers
+            inputs = tf.keras.layers.Flatten()(inputs)
+            
         main_stream = inputs
 
         # Recurrent
