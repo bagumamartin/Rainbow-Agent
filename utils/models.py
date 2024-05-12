@@ -73,7 +73,8 @@ class ModelBuilder():
             for i in range(len(self.units)):
                 main_stream = tf.keras.layers.Dense(
                                     units= self.units[i],
-                                    activation='relu',
+                                    # activation='relu',
+                                    activation='mish',
                                     kernel_regularizer=tf.keras.regularizers.l2(self.l2_reg),
                                     trainable=trainable)(main_stream)
                 if self.dropout > 0: main_stream = tf.keras.layers.Dropout(self.dropout)(main_stream)
@@ -81,13 +82,15 @@ class ModelBuilder():
         # Distributional & Adversarial
         if self.distributional and self.adversarial:
             action_stream = main_stream
-            action_stream = tf.keras.layers.Dense(units = 512, activation = "relu", kernel_regularizer=tf.keras.regularizers.l2(self.l2_reg), trainable=trainable)(action_stream)
+            # action_stream = tf.keras.layers.Dense(units = 512, activation = "relu", kernel_regularizer=tf.keras.regularizers.l2(self.l2_reg), trainable=trainable)(action_stream)
+            action_stream = tf.keras.layers.Dense(units = 512, activation = "mish", kernel_regularizer=tf.keras.regularizers.l2(self.l2_reg), trainable=trainable)(action_stream)
             if self.dropout > 0: action_stream = tf.keras.layers.Dropout(self.dropout)(action_stream)
             action_stream = self.dense(units= self.nb_atoms * self.nb_actions, trainable=trainable)(action_stream)
             action_stream = tf.keras.layers.Reshape((self.nb_actions, self.nb_atoms))(action_stream)
 
             value_stream = main_stream
-            value_stream = tf.keras.layers.Dense(units = 512, activation = "relu", kernel_regularizer=tf.keras.regularizers.l2(self.l2_reg), trainable=trainable)(value_stream)
+            # value_stream = tf.keras.layers.Dense(units = 512, activation = "relu", kernel_regularizer=tf.keras.regularizers.l2(self.l2_reg), trainable=trainable)(value_stream)
+            value_stream = tf.keras.layers.Dense(units = 512, activation = "mish", kernel_regularizer=tf.keras.regularizers.l2(self.l2_reg), trainable=trainable)(value_stream)
             if self.dropout > 0: value_stream = tf.keras.layers.Dropout(self.dropout)(value_stream)
             value_stream = self.dense(units = self.nb_atoms, trainable=trainable)(value_stream)
 
@@ -103,12 +106,14 @@ class ModelBuilder():
         # Only Adversarial
         elif not self.distributional and self.adversarial:
             action_stream = main_stream
-            action_stream = tf.keras.layers.Dense(units = 256, activation = "relu", kernel_regularizer=tf.keras.regularizers.l2(self.l2_reg), trainable=trainable)(action_stream)
+            # action_stream = tf.keras.layers.Dense(units = 256, activation = "relu", kernel_regularizer=tf.keras.regularizers.l2(self.l2_reg), trainable=trainable)(action_stream)
+            action_stream = tf.keras.layers.Dense(units = 256, activation = "mish", kernel_regularizer=tf.keras.regularizers.l2(self.l2_reg), trainable=trainable)(action_stream)
             action_stream = tf.keras.layers.Dropout(self.dropout)(action_stream)
             action_stream = self.dense(units= self.nb_actions, trainable=trainable)(action_stream)
 
             value_stream = main_stream
-            value_stream = tf.keras.layers.Dense(units = 256, activation = "relu", kernel_regularizer=tf.keras.regularizers.l2(self.l2_reg), trainable=trainable)(value_stream)
+            # value_stream = tf.keras.layers.Dense(units = 256, activation = "relu", kernel_regularizer=tf.keras.regularizers.l2(self.l2_reg), trainable=trainable)(value_stream)
+            value_stream = tf.keras.layers.Dense(units = 256, activation = "mish", kernel_regularizer=tf.keras.regularizers.l2(self.l2_reg), trainable=trainable)(value_stream)
             value_stream = tf.keras.layers.Dropout(self.dropout)(value_stream)
             value_stream = self.dense(units = 1, trainable=trainable)(value_stream)
 
