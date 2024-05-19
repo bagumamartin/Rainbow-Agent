@@ -13,15 +13,6 @@ import tensorflow as tf
 #         print(e)
 
 
-from tensorflow import keras
-import numpy as np
-import datetime
-from .utils.memories import ReplayMemory, RNNReplayMemory, MultiStepsBuffer
-from .utils.models import ModelBuilder, AdversarialModelAgregator
-import dill
-import glob
-import json
-
 # Detect and configure TPU, GPU, or CPU
 try:
     # Attempt to use a TPU
@@ -46,6 +37,15 @@ except ValueError:
     else:
         print("Running on CPU")
         strategy = tf.distribute.get_strategy()  # Default strategy for CPU
+
+from tensorflow import keras
+import numpy as np
+import datetime
+from .utils.memories import ReplayMemory, RNNReplayMemory, MultiStepsBuffer
+from .utils.models import ModelBuilder, AdversarialModelAgregator
+import dill
+import glob
+import json
 
 
 class Rainbow:
@@ -186,7 +186,7 @@ class Rainbow:
 
     
     def train(self):
-        with strategy.scope():
+        # with strategy.scope():
             self.steps += 1
             for i_env in range(self.simultaneous_training_env): self.episode_steps[i_env] += 1
             if self.replay_memory.size() < self.batch_size or self.get_current_epsilon() >= 1:
