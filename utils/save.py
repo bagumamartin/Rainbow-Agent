@@ -8,7 +8,7 @@ def save_agent(agent, path):
     print(f"Saving agent to {path}")
     pathlib.Path(path).mkdir(parents=True, exist_ok=True)
     
-    agent.model.save_weights(path + "/model.h5",)
+    agent.model.save_weights(path + "/weights.h5",)
     agent.target_model.save_weights(path + "/target_model.h5",)
     np.savez_compressed(path + "/memory",
                         states_memory = agent.memory.states_memory,
@@ -50,7 +50,7 @@ def load_agent(path, retrain = True, verbose = True):
         agent = dill.load(file)
 
     agent.model = agent.build_model()
-    agent.model.load_weights(path + '/model.h5')
+    agent.model.load_weights(path + '/weights.h5')
     agent.model.build(agent.input_shape)   
     
     if retrain:
