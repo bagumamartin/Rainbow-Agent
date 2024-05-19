@@ -130,12 +130,12 @@ class Rainbow:
             self.zs = tf.constant([v_min + i * self.delta_z for i in range(nb_atoms)], dtype=tf.float32)
 
         self.start_time = datetime.datetime.now()
-        
+
     def new_episode(self, i_env):
         self.episode_count[i_env] += 1
         self.episode_steps[i_env] = 0
         self.episode_rewards[i_env] = []
-        
+
     def store_replay(self, state, action, reward, next_state, done, truncated, i_env=0):
         if self.multi_steps == 1:
             self.replay_memory.store(
@@ -151,7 +151,7 @@ class Rainbow:
         if done or truncated:
             self.log(i_env)
             self.new_episode(i_env)
-            
+
     def store_replays(self, states, actions, rewards, next_states, dones, truncateds):
         for i_env in range(len(actions)):
             self.store_replay(
@@ -164,17 +164,25 @@ class Rainbow:
             self.episode_steps[i_env] += 1
         if self.replay_memory.size() < self.batch_size or self.get_current_epsilon() >= 1:
             return
-        
+
         if self.steps % self.tau == 0:
             self.target_model.set_weights(self.model.get_weights())
-        
+
         if self.steps % self.train_every == 0:
             batch_indexes, states, actions, rewards, states_prime, dones, importance_weights = self.replay_memory.sample(
                 self.batch_size,
                 self.prioritized_replay_beta_function(sum(self.episode_count), self.steps)
             )
-            with strategy.scope():
-                loss_value, td_errors = self.train_step(states, actions, rewards, states_prime, dones, importance_weights)
+
+            def distributed_train_step(inputs):
+                states, actions, rewards, states_prime, dones, importance_weights = inputs
+                return self.train_step(states, actions, rewards, states_prime, dones, importance_weights)
+
+            per_replica_losses, per_replica_td_errors = strategy.run(distributed_train_step, args=((states, actions, rewards, states_prime, dones, importance_weights),))
+
+            loss_value = strategy.reduce(tf.distribute.ReduceOp.MEAN, per_replica_losses, axis=None)
+            td_errors = strategy.reduce(tf.distribute.ReduceOp.MEAN, per_replica_td_errors, axis=None)
+
             self.replay_memory.update_priority(batch_indexes, td_errors)
             self.losses.append(float(loss_value))
 
@@ -189,7 +197,7 @@ class Rainbow:
             f"Length : {self.episode_steps[i_env]: 6.0f}"
         )
         print(text_print)
-    
+
     def get_current_epsilon(self, delta_episode=0, delta_steps=0):
         return self.epsilon_function(sum(self.episode_count) + delta_episode, self.steps + delta_steps)
 
@@ -210,17 +218,17 @@ class Rainbow:
         m = (t.total_seconds() % (60 * 60)) // 60
         s = t.total_seconds() % 60
         return f"{h:02.0f}:{m:02.0f}:{s:02.0f}"
-   
-    def train_step(self, *args, **kwargs):
+
+    def train_step(self, states, actions, rewards, states_prime, dones, weights):
         if self.distributional:
-            return self._distributional_train_step(*args, **kwargs)
-        return self._classic_train_step(*args, **kwargs)
-    
+            return self._distributional_train_step(states, actions, rewards, states_prime, dones, weights)
+        return self._classic_train_step(states, actions, rewards, states_prime, dones, weights)
+
     def pick_action(self, *args, **kwargs):
         if self.distributional:
             return int(self._distributional_pick_action(*args, **kwargs))
         return int(self._classic_pick_action(*args, **kwargs))
-    
+
     def pick_actions(self, *args, **kwargs):
         if self.distributional:
             return self._distributional_pick_actions(*args, **kwargs)
@@ -253,7 +261,7 @@ class Rainbow:
     @tf.function
     def _classic_pick_actions(self, states):
         return tf.argmax(self.model(states, training=False), axis=1)
-    
+
     @tf.function
     def _classic_pick_action(self, state):
         return tf.argmax(self.model(state[tf.newaxis, ...], training=False), axis=1)
@@ -312,7 +320,7 @@ class Rainbow:
             td_errors = - tf.reduce_sum(m * tf.math.log(tf.clip_by_value(p__s_a, 1E-6, 1.0 - 1E-6)), axis=-1)
             td_errors_weighted = td_errors * tf.cast(weights, tf.float32)
             loss_value = tf.math.reduce_mean(td_errors_weighted)
-        
+
         gradients = tape.gradient(loss_value, self.model.trainable_weights)
         self.model.optimizer.apply_gradients(zip(gradients, self.model.trainable_weights))
         return loss_value, td_errors
@@ -325,7 +333,7 @@ class Rainbow:
             self.model.save(f"{path}/model.h5")
         if self.target_model is not None:
             self.target_model.save(f"{path}/target_model.h5")
-        
+
         with open(f'{path}/agent.pkl', 'wb') as file:
             dill.dump(self, file)
         for key, element in kwargs.items():
