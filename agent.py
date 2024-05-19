@@ -4,7 +4,7 @@ import tensorflow as tf
 try:
     # Attempt to use a TPU
     tpu = tf.distribute.cluster_resolver.TPUClusterResolver()
-    tf.config.experimental_connect_to_cluster(tpu)
+    tf.config.experimental.connect_to_cluster(tpu)
     tf.tpu.experimental.initialize_tpu_system(tpu)
     strategy = tf.distribute.TPUStrategy(tpu)
     print("Running on TPU")
@@ -188,11 +188,12 @@ class Rainbow:
             self.losses.append(float(loss_value))
 
     def log(self, i_env=0):
+        mean_loss = np.mean(self.losses[-10_000:]) if self.losses else float('nan')
         text_print = (
             f"↳ Env {i_env} : {self.episode_count[i_env]:03} : {self.steps: 8d}   |   "
             f"{self.format_time(datetime.datetime.now() - self.start_time)}   |   "
             f"Epsilon : {self.get_current_epsilon() * 100: 4.2f}%   |   "
-            f"Mean Loss (last 10k) : {np.mean(self.losses[-10_000:]):0.4E}   |   "
+            f"Mean Loss (last 10k) : {mean_loss:0.4E}   |   "
             f"Tot. Rewards : {np.sum(self.episode_rewards[i_env]): 8.2f}   |   "
             f"Rewards (/1000 steps) : {1000 * np.sum(self.episode_rewards[i_env]) / self.episode_steps[i_env]: 8.2f}   |   "
             f"Length : {self.episode_steps[i_env]: 6.0f}"
