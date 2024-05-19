@@ -17,7 +17,7 @@ from tensorflow import keras
 import numpy as np
 import datetime
 from .utils.memories import ReplayMemory, RNNReplayMemory, MultiStepsBuffer
-from .utils.models import ModelBuilder, AdversarialModelAgregator
+from .utils.models import ModelBuilder, AdversarialModelAgregator, CustomNoisyDense
 import os
 import dill
 import glob
@@ -344,8 +344,8 @@ def load_agent(path):
     with open(f'{path}/agent.pkl', 'rb') as file:
         unpickler = dill.Unpickler(file)
         agent = unpickler.load()
-    agent.model = tf.keras.models.load_model(f'{path}/model.h5', compile=False, custom_objects = {"AdversarialModelAgregator" : AdversarialModelAgregator})
-    agent.target_model = tf.keras.models.load_model(f'{path}/target_model.h5', compile=False, custom_objects = {"AdversarialModelAgregator" : AdversarialModelAgregator})
+    agent.model = tf.keras.models.load_model(f'{path}/model.h5', compile=False, custom_objects = {"AdversarialModelAgregator" : AdversarialModelAgregator, "CustomNoisyDense" : CustomNoisyDense})
+    agent.target_model = tf.keras.models.load_model(f'{path}/target_model.h5', compile=False, custom_objects = {"AdversarialModelAgregator" : AdversarialModelAgregator, "CustomNoisyDense" : CustomNoisyDense})
 
     other_elements = {}
     other_pathes = glob.glob(f'{path}/*pkl')
