@@ -189,16 +189,20 @@ class Rainbow:
 
     def log(self, i_env=0):
         mean_loss = np.mean(self.losses[-10_000:]) if self.losses else float('nan')
+        total_rewards = np.sum(self.episode_rewards[i_env])
+        episode_steps = self.episode_steps[i_env]
+        rewards_per_1000_steps = 1000 * total_rewards / episode_steps if episode_steps > 0 else float('nan')
         text_print = (
             f"↳ Env {i_env} : {self.episode_count[i_env]:03} : {self.steps: 8d}   |   "
             f"{self.format_time(datetime.datetime.now() - self.start_time)}   |   "
             f"Epsilon : {self.get_current_epsilon() * 100: 4.2f}%   |   "
             f"Mean Loss (last 10k) : {mean_loss:0.4E}   |   "
-            f"Tot. Rewards : {np.sum(self.episode_rewards[i_env]): 8.2f}   |   "
-            f"Rewards (/1000 steps) : {1000 * np.sum(self.episode_rewards[i_env]) / self.episode_steps[i_env]: 8.2f}   |   "
-            f"Length : {self.episode_steps[i_env]: 6.0f}"
+            f"Tot. Rewards : {total_rewards: 8.2f}   |   "
+            f"Rewards (/1000 steps) : {rewards_per_1000_steps: 8.2f}   |   "
+            f"Length : {episode_steps: 6.0f}"
         )
         print(text_print)
+
 
     def get_current_epsilon(self, delta_episode=0, delta_steps=0):
         return self.epsilon_function(sum(self.episode_count) + delta_episode, self.steps + delta_steps)
