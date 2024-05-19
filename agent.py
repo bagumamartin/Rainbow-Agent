@@ -93,6 +93,17 @@ class Rainbow:
             adversarial= adversarial,
             noisy = noisy
         )
+        self.model_builder = ModelBuilder(
+            units = units,
+            dropout= dropout,
+            nb_states= nb_states,
+            nb_actions= nb_actions,
+            l2_reg= None,
+            window= window,
+            distributional= distributional, nb_atoms= nb_atoms,
+            adversarial= adversarial,
+            noisy = noisy
+        )
         input_shape = (None, nb_states)
         self.model = model_builder.build_model(trainable= True)
         self.model.build(input_shape)
