@@ -158,6 +158,7 @@ class Rainbow:
                 states[i_env], actions[i_env], rewards[i_env], next_states[i_env], dones[i_env], truncateds[i_env], i_env=i_env
             )
 
+    @tf.function
     def train(self):
         self.steps += 1
         for i_env in range(self.simultaneous_training_env): 
