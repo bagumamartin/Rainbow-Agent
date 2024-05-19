@@ -14,24 +14,24 @@ class AdversarialModelAgregator(tf.keras.Model):
         return outputs
 
 
-class CustomNoisyDense(tf.keras.layers.Layer):
-    def __init__(self, units, sigma=0.1, **kwargs):
-        super(CustomNoisyDense, self).__init__(**kwargs)
-        self.units = units
-        self.sigma = sigma
+# class CustomNoisyDense(tf.keras.layers.Layer):
+#     def __init__(self, units, sigma=0.1, **kwargs):
+#         super(CustomNoisyDense, self).__init__(**kwargs)
+#         self.units = units
+#         self.sigma = sigma
 
-    def build(self, input_shape):
-        self.w = self.add_weight(shape=(input_shape[-1], self.units),
-                                 initializer='random_normal',
-                                 trainable=True)
-        self.b = self.add_weight(shape=(self.units,), initializer='zeros', trainable=True)
+#     def build(self, input_shape):
+#         self.w = self.add_weight(shape=(input_shape[-1], self.units),
+#                                  initializer='random_normal',
+#                                  trainable=True)
+#         self.b = self.add_weight(shape=(self.units,), initializer='zeros', trainable=True)
 
-    def call(self, inputs, training=False):
-        if training:
-            W = self.w + tf.random.normal(self.w.shape, stddev=self.sigma)
-        else:
-            W = self.w
-        return tf.matmul(inputs, W) + self.b
+#     def call(self, inputs, training=False):
+#         if training:
+#             W = self.w + tf.random.normal(self.w.shape, stddev=self.sigma)
+#         else:
+#             W = self.w
+#         return tf.matmul(inputs, W) + self.b
 
 
 class ModelBuilder():
@@ -51,7 +51,11 @@ class ModelBuilder():
     
     def dense(self, *args, **kwargs):
         # if self.noisy: return tfa.layers.NoisyDense(*args, sigma= 0.1, **kwargs)
-        if self.noisy: return CustomNoisyDense(*args, sigma= 0.1, **kwargs)
+        if self.noisy: 
+            return tf.keras.Sequential([
+                tf.keras.layers.Dense(*args, **kwargs),
+                tf.keras.layers.GaussianNoise(stddev=0.1)  # Add GaussianNoise layer with desired stddev
+            ])
         return tf.keras.layers.Dense(*args, **kwargs)
         
 
