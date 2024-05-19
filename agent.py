@@ -186,28 +186,29 @@ class Rainbow:
 
     
     def train(self):
-        self.steps += 1
-        for i_env in range(self.simultaneous_training_env): self.episode_steps[i_env] += 1
-        if self.replay_memory.size() < self.batch_size or self.get_current_epsilon() >= 1:
-            return
-        
-        if self.steps % self.tau == 0:
-            self.target_model.set_weights(self.model.get_weights())
-        
-        if self.steps % self.train_every == 0:
-            batch_indexes, states, actions, rewards, states_prime, dones, importance_weights = self.replay_memory.sample(
-                self.batch_size,
-                self.prioritized_replay_beta_function(sum(self.episode_count), self.steps)
-            )
+        with strategy.scope():
+            self.steps += 1
+            for i_env in range(self.simultaneous_training_env): self.episode_steps[i_env] += 1
+            if self.replay_memory.size() < self.batch_size or self.get_current_epsilon() >= 1:
+                return
+            
+            if self.steps % self.tau == 0:
+                self.target_model.set_weights(self.model.get_weights())
+            
+            if self.steps % self.train_every == 0:
+                batch_indexes, states, actions, rewards, states_prime, dones, importance_weights = self.replay_memory.sample(
+                    self.batch_size,
+                    self.prioritized_replay_beta_function(sum(self.episode_count), self.steps)
+                )
 
-            loss_value, td_errors = self.train_step(states, actions, rewards, states_prime, dones, importance_weights)
-            self.replay_memory.update_priority(batch_indexes, td_errors)
+                loss_value, td_errors = self.train_step(states, actions, rewards, states_prime, dones, importance_weights)
+                self.replay_memory.update_priority(batch_indexes, td_errors)
 
-            self.losses.append(float(loss_value))
+                self.losses.append(float(loss_value))
 
-        # Tensorboard
-        # with self.train_summary_writer.as_default():
-        #     tf.summary.scalar('Step Training Loss', loss_value, step = self.total_stats['training_steps'])
+            # Tensorboard
+            # with self.train_summary_writer.as_default():
+            #     tf.summary.scalar('Step Training Loss', loss_value, step = self.total_stats['training_steps'])
 
     def log(self, i_env = 0):
         text_print =f"\
