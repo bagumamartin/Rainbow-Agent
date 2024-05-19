@@ -17,8 +17,7 @@ from tensorflow import keras
 import numpy as np
 import datetime
 from .utils.memories import ReplayMemory, RNNReplayMemory, MultiStepsBuffer
-from .utils.models import ModelBuilder, AdversarialModelAgregator, CustomNoisyDense
-import os
+from .utils.models import ModelBuilder, AdversarialModelAgregator
 import dill
 import glob
 import json
