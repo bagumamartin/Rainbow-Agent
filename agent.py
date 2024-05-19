@@ -22,6 +22,17 @@ import dill
 import glob
 import json
 
+# Set up MirroredStrategy for multi-GPU training
+tf.debugging.set_log_device_placement(True)
+gpus = tf.config.list_logical_devices('GPU')
+strategy = tf.distribute.MirroredStrategy(gpus)
+
+if len(gpus) > 1:
+    strategy = tf.distribute.MirroredStrategy()
+else:
+    strategy = tf.distribute.get_strategy()  # Default strategy for single GPU or CPU
+
+
 class Rainbow:
     def __init__(self,
             nb_states, 
@@ -81,39 +92,29 @@ class Rainbow:
         if self.multi_steps > 1: self.multi_steps_buffers = [MultiStepsBuffer(self.multi_steps, self.gamma) for _ in range(simultaneous_training_env)]
 
         # Models
-        model_builder = ModelBuilder(
-            units = units,
-            dropout= dropout,
-            nb_states= nb_states,
-            nb_actions= nb_actions,
-            l2_reg= None,
-            window= window,
-            distributional= distributional, nb_atoms= nb_atoms,
-            adversarial= adversarial,
-            noisy = noisy
-        )
-        self.model_builder = ModelBuilder(
-            units = units,
-            dropout= dropout,
-            nb_states= nb_states,
-            nb_actions= nb_actions,
-            l2_reg= None,
-            window= window,
-            distributional= distributional, nb_atoms= nb_atoms,
-            adversarial= adversarial,
-            noisy = noisy
-        )
-        input_shape = (None, nb_states)
-        self.model = model_builder.build_model(trainable= True)
-        self.model.build(input_shape)
-        self.model.compile(
-            # optimizer= tf.keras.optimizers.legacy.Adam(self.learning_rate, epsilon= 1.5E-4)
-            optimizer= tf.keras.optimizers.Adam(self.learning_rate, epsilon= 1.5E-4)
-        )
+        with strategy.scope():
+            model_builder = ModelBuilder(
+                units = units,
+                dropout= dropout,
+                nb_states= nb_states,
+                nb_actions= nb_actions,
+                l2_reg= None,
+                window= window,
+                distributional= distributional, nb_atoms= nb_atoms,
+                adversarial= adversarial,
+                noisy = noisy
+            )
+            input_shape = (None, nb_states)
+            self.model = model_builder.build_model(trainable= True)
+            self.model.build(input_shape)
+            self.model.compile(
+                # optimizer= tf.keras.optimizers.legacy.Adam(self.learning_rate, epsilon= 1.5E-4)
+                optimizer= tf.keras.optimizers.Adam(self.learning_rate, epsilon= 1.5E-4)
+            )
 
-        self.target_model = model_builder.build_model(trainable= False)
-        self.target_model.build(input_shape)
-        self.target_model.set_weights(self.model.get_weights())
+            self.target_model = model_builder.build_model(trainable= False)
+            self.target_model.build(input_shape)
+            self.target_model.set_weights(self.model.get_weights())
 
 
         # Initialize Tensorboard
