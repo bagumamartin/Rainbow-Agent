@@ -1,16 +1,16 @@
 import tensorflow as tf
 
-gpus = tf.config.list_physical_devices('GPU')
-if gpus:
-    try:
-        # Currently, memory growth needs to be the same across GPUs
-        for gpu in gpus:
-            tf.config.experimental.set_memory_growth(gpu, True)
-        logical_gpus = tf.config.list_logical_devices('GPU')
-        print(f"{len(gpus)} Physical GPUs, {len(logical_gpus)} Logical GPUs")
-    except RuntimeError as e:
-        # Memory growth must be set before GPUs have been initialized
-        print(e)
+# gpus = tf.config.list_physical_devices('GPU')
+# if gpus:
+#     try:
+#         # Currently, memory growth needs to be the same across GPUs
+#         for gpu in gpus:
+#             tf.config.experimental.set_memory_growth(gpu, True)
+#         logical_gpus = tf.config.list_logical_devices('GPU')
+#         print(f"{len(gpus)} Physical GPUs, {len(logical_gpus)} Logical GPUs")
+#     except RuntimeError as e:
+#         # Memory growth must be set before GPUs have been initialized
+#         print(e)
 
 
 from tensorflow import keras
@@ -22,15 +22,30 @@ import dill
 import glob
 import json
 
-# Set up MirroredStrategy for multi-GPU training
-tf.debugging.set_log_device_placement(True)
-gpus = tf.config.list_logical_devices('GPU')
-strategy = tf.distribute.MirroredStrategy(gpus)
-
-if len(gpus) > 1:
-    strategy = tf.distribute.MirroredStrategy()
-else:
-    strategy = tf.distribute.get_strategy()  # Default strategy for single GPU or CPU
+# Detect and configure TPU, GPU, or CPU
+try:
+    # Attempt to use a TPU
+    tpu = tf.distribute.cluster_resolver.TPUClusterResolver()
+    tf.config.experimental_connect_to_cluster(tpu)
+    tf.tpu.experimental.initialize_tpu_system(tpu)
+    strategy = tf.distribute.TPUStrategy(tpu)
+    print("Running on TPU")
+except ValueError:
+    # If TPU is not available, fallback to GPU or CPU
+    gpus = tf.config.list_physical_devices('GPU')
+    if gpus:
+        try:
+            for gpu in gpus:
+                tf.config.experimental.set_memory_growth(gpu, True)
+            logical_gpus = tf.config.list_logical_devices('GPU')
+            print(f"{len(gpus)} Physical GPUs, {len(logical_gpus)} Logical GPUs")
+            strategy = tf.distribute.MirroredStrategy()
+        except RuntimeError as e:
+            print(e)
+            strategy = tf.distribute.get_strategy()  # Default strategy for single GPU or CPU
+    else:
+        print("Running on CPU")
+        strategy = tf.distribute.get_strategy()  # Default strategy for CPU
 
 
 class Rainbow:
