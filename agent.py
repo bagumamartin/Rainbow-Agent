@@ -400,8 +400,7 @@ def save_agent(agent, path):
     
     # Save model weights
     agent.model.save_weights(os.path.join(path, 'model.weights.h5'))
-    if hasattr(agent, 'target_model'):
-        agent.target_model.save_weights(os.path.join(path, 'target_model.weights.h5'))
+    agent.target_model.save_weights(os.path.join(path, 'target_model.weights.h5'))
     
     # Prepare memory data to save
     memory_data = {
@@ -418,16 +417,8 @@ def save_agent(agent, path):
     np.savez_compressed(os.path.join(path, 'memory.npz'), **memory_data)
     
     # Save the agent object
-    model = agent.model
-    target_model = agent.target_model
-    agent.model = None
-    agent.target_model = None
     with open(os.path.join(path, 'agent.pkl'), 'wb') as file:
         dill.dump(agent, file)
-    
-    # Restore models
-    agent.model = model
-    agent.target_model = target_model
 
 def load_agent(path, retrain=True, verbose=True):
     if verbose:
