@@ -437,12 +437,10 @@ def load_agent(path, retrain=True, verbose=True):
     with open(os.path.join(path, 'agent.pkl'), 'rb') as file:
         agent = dill.load(file)
     
-    # Rebuild models
-    agent.model = agent.build_model()
+    # Load model weights
     agent.model.load_weights(os.path.join(path, 'model.weights.h5'))
     
     if retrain:
-        agent.target_model = agent.build_model(trainable=False)
         agent.target_model.load_weights(os.path.join(path, 'target_model.weights.h5'))
         
         # Load replay memory
