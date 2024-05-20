@@ -55,7 +55,7 @@ def load_agent(path, retrain = True, verbose = True):
     
     if retrain:
         agent.target_model = agent.build_model(trainable = False)
-        agent.target_model.load_weights(path + '//target/weights.h5')
+        agent.target_model.load_weights(path + '/target/weights.h5')
         agent.target_model.build(agent.input_shape)
         
         memories = np.load(path + "/memory.npz")
