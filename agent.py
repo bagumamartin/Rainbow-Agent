@@ -402,14 +402,14 @@ def save_agent(agent, path):
     if hasattr(agent, 'target_model'):
         agent.target_model.save_weights(os.path.join(path, 'target_model.weights.h5'))
     
-    # Save memories
+    # Save replay memory
     np.savez_compressed(os.path.join(path, 'memory.npz'),
-                        states_memory=agent.memory.states_memory,
-                        actions_memory=agent.memory.actions_memory,
-                        rewards_memory=agent.memory.rewards_memory,
-                        states_prime_memory=agent.memory.states_prime_memory,
-                        done_memory=agent.memory.done_memory,
-                        probabilities=agent.memory.probabilities)
+                        states_memory=agent.replay_memory.states_memory,
+                        actions_memory=agent.replay_memory.actions_memory,
+                        rewards_memory=agent.replay_memory.rewards_memory,
+                        states_prime_memory=agent.replay_memory.states_prime_memory,
+                        done_memory=agent.replay_memory.done_memory,
+                        probabilities=agent.replay_memory.probabilities)
     
     # Save the agent object
     model = agent.model
@@ -419,6 +419,7 @@ def save_agent(agent, path):
     with open(os.path.join(path, 'agent.pkl'), 'wb') as file:
         dill.dump(agent, file)
     
+    # Restore models
     agent.model = model
     agent.target_model = target_model
 
@@ -438,17 +439,17 @@ def load_agent(path, retrain=True, verbose=True):
         agent.target_model = agent.build_model(trainable=False)
         agent.target_model.load_weights(os.path.join(path, 'target_model.weights.h5'))
         
-        # Load memories
+        # Load replay memory
         memories = np.load(os.path.join(path, 'memory.npz'))
-        agent.memory.states_memory = memories['states_memory']
-        agent.memory.actions_memory = memories['actions_memory']
-        agent.memory.rewards_memory = memories['rewards_memory']
-        agent.memory.states_prime_memory = memories['states_prime_memory']
-        agent.memory.done_memory = memories['done_memory']
-        agent.memory.probabilities = memories.get('probabilities')
+        agent.replay_memory.states_memory = memories['states_memory']
+        agent.replay_memory.actions_memory = memories['actions_memory']
+        agent.replay_memory.rewards_memory = memories['rewards_memory']
+        agent.replay_memory.states_prime_memory = memories['states_prime_memory']
+        agent.replay_memory.done_memory = memories['done_memory']
+        agent.replay_memory.probabilities = memories.get('probabilities', None)
     else:
         def end_training(agent, *args, **kwargs):
             print("The model cannot be trained anymore nor store experiences")
-        agent.train = agent.store_experience = types.MethodType(end_training, agent)
+        agent.train = agent.store_replay = types.MethodType(end_training, agent)
     
     return agent
