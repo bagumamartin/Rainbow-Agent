@@ -398,9 +398,9 @@ def save_agent(agent, path):
     os.makedirs(path, exist_ok=True)
     
     # Save model weights
-    agent.model.save_weights(os.path.join(path, 'model.h5'))
+    agent.model.save_weights(os.path.join(path, 'model.weights.h5'))
     if hasattr(agent, 'target_model'):
-        agent.target_model.save_weights(os.path.join(path, 'target_model.h5'))
+        agent.target_model.save_weights(os.path.join(path, 'target_model.weights.h5'))
     
     # Save memories
     np.savez_compressed(os.path.join(path, 'memory.npz'),
@@ -432,11 +432,11 @@ def load_agent(path, retrain=True, verbose=True):
     
     # Rebuild models
     agent.model = agent.build_model()
-    agent.model.load_weights(os.path.join(path, 'model.h5'))
+    agent.model.load_weights(os.path.join(path, 'model.weights.h5'))
     
     if retrain:
         agent.target_model = agent.build_model(trainable=False)
-        agent.target_model.load_weights(os.path.join(path, 'target_model.h5'))
+        agent.target_model.load_weights(os.path.join(path, 'target_model.weights.h5'))
         
         # Load memories
         memories = np.load(os.path.join(path, 'memory.npz'))
