@@ -89,6 +89,7 @@ class Rainbow:
         self.learning_rate = learning_rate
         self.tau = tau
         self.batch_size = batch_size
+        self.prioritized_replay = prioritized_replay
         self.prioritized_replay_alpha = prioritized_replay_alpha
         self.prioritized_replay_beta_function = prioritized_replay_beta_function
         self.train_every = train_every
@@ -373,7 +374,7 @@ class Rainbow:
         self.__dict__.update(state)
         self.model = None
         self.target_model = None
-        self.replay_memory = ReplayMemory(capacity=self.replay_capacity, nb_states=self.nb_states, prioritized=self.prioritized_replay, alpha=self.prioritized_replay_alpha)
+        self.replay_memory = ReplayMemory(capacity= self.replay_capacity, nb_states= self.nb_states, prioritized = self.prioritized_replay, alpha= self.prioritized_replay_alpha)
         if self.recurrent:
             self.replay_memory = RNNReplayMemory(window=self.window, capacity=self.replay_capacity, nb_states=self.nb_states, prioritized=self.prioritized_replay, alpha=self.prioritized_replay_alpha)
         if self.multi_steps > 1:
