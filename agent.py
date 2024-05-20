@@ -395,6 +395,7 @@ def lload_agent(path):
 
 # In agent.py
 def save_agent(agent, path):
+    print(f"Saving agent to {path}")
     os.makedirs(path, exist_ok=True)
     
     # Save model weights
