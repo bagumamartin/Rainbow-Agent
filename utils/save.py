@@ -9,7 +9,7 @@ def save_agent(agent, path):
     pathlib.Path(path).mkdir(parents=True, exist_ok=True)
     
     agent.model.save_weights(path + "/weights.h5",)
-    agent.target_model.save_weights(path + "/target_model.h5",)
+    agent.target_model.save_weights(path + "/target/weights.h5",)
     np.savez_compressed(path + "/memory",
                         states_memory = agent.memory.states_memory,
                         actions_memory = agent.memory.actions_memory,
@@ -55,7 +55,7 @@ def load_agent(path, retrain = True, verbose = True):
     
     if retrain:
         agent.target_model = agent.build_model(trainable = False)
-        agent.target_model.load_weights(path + '/target_model.h5')
+        agent.target_model.load_weights(path + '//target/weights.h5')
         agent.target_model.build(agent.input_shape)
         
         memories = np.load(path + "/memory.npz")
