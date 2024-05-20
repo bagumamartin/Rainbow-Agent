@@ -1,6 +1,10 @@
 import tensorflow as tf
+from tensorflow.keras.saving import register_keras_serializable
+
 # import tensorflow_addons as tfa
 
+
+@register_keras_serializable(package="Custom", name="AdversarialModelAgregator")
 class AdversarialModelAgregator(tf.keras.Model):
     def call(self, outputs):
         # Distributional :

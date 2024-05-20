@@ -1,4 +1,5 @@
 import tensorflow as tf
+from tensorflow.keras.saving import custom_object_scope
 
 # gpus = tf.config.list_physical_devices('GPU')
 # if gpus:
@@ -347,8 +348,8 @@ class Rainbow:
         self.saved_path = path
         if not os.path.exists(path): os.makedirs(path)
 
-        if self.model is not None: self.model.save(f"{path}/model.h5")
-        if self.target_model is not None: self.target_model.save(f"{path}/target_model.h5")
+        if self.model is not None: self.model.save(f"{path}/model.keras")
+        if self.target_model is not None: self.target_model.save(f"{path}/target_model.keras")
         
         with open(f'{path}/agent.pkl', 'wb') as file:
             dill.dump(self, file)
@@ -373,8 +374,12 @@ def lload_agent(path):
     with open(f'{path}/agent.pkl', 'rb') as file:
         unpickler = dill.Unpickler(file)
         agent = unpickler.load()
-    agent.model = tf.keras.models.load_model(f'{path}/model.h5', compile=False, custom_objects = {"AdversarialModelAgregator" : AdversarialModelAgregator})
-    agent.target_model = tf.keras.models.load_model(f'{path}/target_model.h5', compile=False, custom_objects = {"AdversarialModelAgregator" : AdversarialModelAgregator})
+
+    custom_objects = {"AdversarialModelAgregator": AdversarialModelAgregator}
+
+    with custom_object_scope(custom_objects):
+        agent.model = tf.keras.models.load_model(f'{path}/model.keras', compile=False)
+        agent.target_model = tf.keras.models.load_model(f'{path}/target_model.keras', compile=False)
 
     other_elements = {}
     other_pathes = glob.glob(f'{path}/*pkl')
