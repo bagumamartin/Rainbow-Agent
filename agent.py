@@ -393,7 +393,7 @@ def lload_agent(path):
         agent.target_model = tf.keras.models.load_model(f'{path}/target_model.keras', compile=False)
 
     # Re-compile the model to restore the optimizer state
-    agent.model.compile(optimizer=tf.keras.optimizers.legacy.Adam(agent.learning_rate, epsilon=1.5E-4))
+    agent.model.compile(optimizer=tf.keras.optimizers.Adam(agent.learning_rate, epsilon=1.5E-4))
 
     other_elements = {}
     other_pathes = glob.glob(f'{path}/*pkl')
