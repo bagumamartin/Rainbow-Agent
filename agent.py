@@ -392,6 +392,9 @@ def lload_agent(path):
         agent.model = tf.keras.models.load_model(f'{path}/model.keras', compile=False)
         agent.target_model = tf.keras.models.load_model(f'{path}/target_model.keras', compile=False)
 
+    # Re-compile the model to restore the optimizer state
+    agent.model.compile(optimizer=tf.keras.optimizers.legacy.Adam(agent.learning_rate, epsilon=1.5E-4))
+
     other_elements = {}
     other_pathes = glob.glob(f'{path}/*pkl')
     other_pathes.extend(glob.glob(f'{path}/*json'))
