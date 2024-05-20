@@ -373,23 +373,19 @@ def lload_agent(path):
     with open(f'{path}/agent.pkl', 'rb') as file:
         unpickler = dill.Unpickler(file)
         agent = unpickler.load()
-
-    with tf.keras.utils.custom_object_scope({'AdversarialModelAgregator': AdversarialModelAgregator}):
-        agent.model = tf.keras.models.load_model(f'{path}/model.h5', compile=False)
-        agent.target_model = tf.keras.models.load_model(f'{path}/target_model.h5', compile=False)
+    agent.model = tf.keras.models.load_model(f'{path}/model.h5', compile=False, custom_objects = {"AdversarialModelAgregator" : AdversarialModelAgregator})
+    agent.target_model = tf.keras.models.load_model(f'{path}/target_model.h5', compile=False, custom_objects = {"AdversarialModelAgregator" : AdversarialModelAgregator})
 
     other_elements = {}
-    other_paths = glob.glob(f'{path}/*pkl')
-    other_paths.extend(glob.glob(f'{path}/*json'))
-    for element_path in other_paths:
+    other_pathes = glob.glob(f'{path}/*pkl')
+    other_pathes.extend(glob.glob(f'{path}/*json'))
+    for element_path in other_pathes:
         name = os.path.split(element_path)[-1].replace(".pkl", "").replace(".json", "")
         if name != "agent":
             with open(element_path, 'rb') as file:
-                if ".pkl" in element_path:
-                    other_elements[name] = dill.load(file)
-                elif ".json" in element_path:
-                    other_elements[name] = json.load(file)
-
+                if ".pkl" in element_path:other_elements[name] = dill.load(file)
+                elif ".json" in element_path:other_elements[name] = json.load(file)
+            
     return agent, other_elements
 
 
