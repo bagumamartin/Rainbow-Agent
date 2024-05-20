@@ -363,11 +363,21 @@ class Rainbow:
 
     def __getstate__(self):
         print("Saving agent ...")
-        return_dict = self.__dict__.copy()
-        return_dict.pop('model', None)
-        return_dict.pop('target_model', None)
-        return_dict.pop('replay_memory', None)
-        return return_dict
+        state = self.__dict__.copy()
+        state.pop('model', None)
+        state.pop('target_model', None)
+        state.pop('replay_memory', None)
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        self.model = None
+        self.target_model = None
+        self.replay_memory = ReplayMemory(capacity=self.replay_capacity, nb_states=self.nb_states, prioritized=self.prioritized_replay, alpha=self.prioritized_replay_alpha)
+        if self.recurrent:
+            self.replay_memory = RNNReplayMemory(window=self.window, capacity=self.replay_capacity, nb_states=self.nb_states, prioritized=self.prioritized_replay, alpha=self.prioritized_replay_alpha)
+        if self.multi_steps > 1:
+            self.multi_steps_buffers = [MultiStepsBuffer(self.multi_steps, self.gamma) for _ in range(self.simultaneous_training_env)]
 
 
 def lload_agent(path):
