@@ -381,7 +381,7 @@ class Rainbow:
             self.multi_steps_buffers = [MultiStepsBuffer(self.multi_steps, self.gamma) for _ in range(self.simultaneous_training_env)]
 
 
-def lload_agent(path):
+def load_agent(path):
     with open(f'{path}/agent.pkl', 'rb') as file:
         unpickler = dill.Unpickler(file)
         agent = unpickler.load()
@@ -406,65 +406,3 @@ def lload_agent(path):
                 elif ".json" in element_path:other_elements[name] = json.load(file)
             
     return agent, other_elements
-
-
-# In agent.py
-def save_agent(agent, path):
-    print(f"Saving agent to {path}")
-    os.makedirs(path, exist_ok=True)
-    
-    # Save model and target_model
-    agent.model.save(os.path.join(path, 'model.h5'))
-    agent.target_model.save(os.path.join(path, 'target_model.h5'))
-    
-    # Prepare memory data to save
-    memory_data = {
-        'states_memory': agent.replay_memory.states_memory,
-        'actions_memory': agent.replay_memory.actions_memory,
-        'rewards_memory': agent.replay_memory.rewards_memory,
-        'states_prime_memory': agent.replay_memory.states_prime_memory,
-        'done_memory': agent.replay_memory.done_memory
-    }
-    if hasattr(agent.replay_memory, 'probabilities'):
-        memory_data['probabilities'] = agent.replay_memory.probabilities
-
-    # Save replay memory
-    np.savez_compressed(os.path.join(path, 'memory.npz'), **memory_data)
-    
-    # Save the agent object
-    with open(os.path.join(path, 'agent.pkl'), 'wb') as file:
-        dill.dump(agent, file)
-
-def load_agent(path, retrain=True, verbose=True):
-    if verbose:
-        print(f"Loading agent from {path}")
-    
-    # Load the agent object
-    with open(os.path.join(path, 'agent.pkl'), 'rb') as file:
-        agent = dill.load(file)
-    
-    # Load model and target_model
-    with tf.keras.utils.custom_object_scope({'AdversarialModelAgregator': AdversarialModelAgregator}):
-        agent.model = tf.keras.models.load_model(os.path.join(path, 'model.h5'), compile=False)
-        agent.target_model = tf.keras.models.load_model(os.path.join(path, 'target_model.h5'), compile=False)
-    
-    if retrain:
-        # Load replay memory
-        memories = np.load(os.path.join(path, 'memory.npz'))
-        agent.replay_memory = ReplayMemory(capacity=agent.replay_capacity,
-                                           nb_states=agent.nb_states,
-                                           prioritized=agent.prioritized_replay,
-                                           alpha=agent.prioritized_replay_alpha)
-        agent.replay_memory.states_memory = memories['states_memory']
-        agent.replay_memory.actions_memory = memories['actions_memory']
-        agent.replay_memory.rewards_memory = memories['rewards_memory']
-        agent.replay_memory.states_prime_memory = memories['states_prime_memory']
-        agent.replay_memory.done_memory = memories['done_memory']
-        if 'probabilities' in memories:
-            agent.replay_memory.probabilities = memories['probabilities']
-    else:
-        def end_training(agent, *args, **kwargs):
-            print("The model cannot be trained anymore nor store experiences")
-        agent.train = agent.store_replay = types.MethodType(end_training, agent)
-    
-    return agent
