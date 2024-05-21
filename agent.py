@@ -398,7 +398,7 @@ def lload_agent(path, retrain=False):
         agent.model.compile(optimizer=tf.keras.optimizers.Adam(agent.learning_rate, epsilon=1.5E-4))
 
     # Reinitialize replay memory if for training
-    agent.__setstate__(agent.__dict__, training=retrain)
+    agent.__setstate__(agent.__dict__, retrain=retrain)
 
     other_elements = {}
     other_pathes = glob.glob(f'{path}/*pkl')
