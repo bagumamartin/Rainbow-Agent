@@ -1,4 +1,44 @@
 import tensorflow as tf
+import os
+
+# Set environment variable to limit CPU memory usage
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # Suppress some log messages
+
+# Limiting CPU memory growth
+# Note: TensorFlow does not provide a direct equivalent for CPU memory growth
+# but we can set other configurations to manage memory usage efficiently.
+
+# Set CPU memory limit (e.g., 25GB)
+cpu_memory_limit_mb = 25 * 1024  # Convert GB to MB
+
+
+# Set CPU memory limit (e.g., 2GB)
+physical_devices = tf.config.experimental.list_physical_devices('CPU')
+if physical_devices:
+    try:
+        # Configure virtual CPUs
+        tf.config.experimental.set_virtual_device_configuration(
+            physical_devices[0],
+            [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=cpu_memory_limit_mb)]
+        )
+        logical_cpus = tf.config.experimental.list_logical_devices('CPU')
+        print(len(physical_devices), "Physical CPUs,", len(logical_cpus), "Logical CPUs")
+    except RuntimeError as e:
+        print(e)
+
+# Limiting GPU memory growth
+gpus = tf.config.list_physical_devices('GPU')
+if gpus:
+    try:
+        # Currently, memory growth needs to be the same across GPUs
+        for gpu in gpus:
+            tf.config.experimental.set_memory_growth(gpu, True)
+        logical_gpus = tf.config.list_logical_devices('GPU')
+        print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
+    except RuntimeError as e:
+        # Memory growth must be set before GPUs have been initialized
+        print(e)
+
 from tensorflow.keras.saving import custom_object_scope
 
 # gpus = tf.config.list_physical_devices('GPU')
@@ -370,18 +410,19 @@ class Rainbow:
         state.pop('replay_memory', None)
         return state
 
-    def __setstate__(self, state):
+    def __setstate__(self, state, retrain=False):
         self.__dict__.update(state)
         self.model = None
         self.target_model = None
-        self.replay_memory = ReplayMemory(capacity= self.replay_capacity, nb_states= self.nb_states, prioritized = self.prioritized_replay, alpha= self.prioritized_replay_alpha)
-        if self.recurrent:
-            self.replay_memory = RNNReplayMemory(window=self.window, capacity=self.replay_capacity, nb_states=self.nb_states, prioritized=self.prioritized_replay, alpha=self.prioritized_replay_alpha)
-        if self.multi_steps > 1:
-            self.multi_steps_buffers = [MultiStepsBuffer(self.multi_steps, self.gamma) for _ in range(self.simultaneous_training_env)]
+        if retrain:
+            self.replay_memory = ReplayMemory(capacity= self.replay_capacity, nb_states= self.nb_states, prioritized = self.prioritized_replay, alpha= self.prioritized_replay_alpha)
+            if self.recurrent:
+                self.replay_memory = RNNReplayMemory(window=self.window, capacity=self.replay_capacity, nb_states=self.nb_states, prioritized=self.prioritized_replay, alpha=self.prioritized_replay_alpha)
+            if self.multi_steps > 1:
+                self.multi_steps_buffers = [MultiStepsBuffer(self.multi_steps, self.gamma) for _ in range(self.simultaneous_training_env)]
 
 
-def lload_agent(path):
+def lload_agent(path, retrain=False):
     with open(f'{path}/agent.pkl', 'rb') as file:
         unpickler = dill.Unpickler(file)
         agent = unpickler.load()
@@ -393,7 +434,11 @@ def lload_agent(path):
         agent.target_model = tf.keras.models.load_model(f'{path}/target_model.keras', compile=False)
 
     # Re-compile the model to restore the optimizer state
-    agent.model.compile(optimizer=tf.keras.optimizers.Adam(agent.learning_rate, epsilon=1.5E-4))
+    if retrain:
+        agent.model.compile(optimizer=tf.keras.optimizers.Adam(agent.learning_rate, epsilon=1.5E-4))
+
+    # Reinitialize replay memory if for training
+    agent.__setstate__(agent.__dict__, training=retrain)
 
     other_elements = {}
     other_pathes = glob.glob(f'{path}/*pkl')
