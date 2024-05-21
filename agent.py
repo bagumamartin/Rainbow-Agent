@@ -1,44 +1,4 @@
 import tensorflow as tf
-import os
-
-# Set environment variable to limit CPU memory usage
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # Suppress some log messages
-
-# Limiting CPU memory growth
-# Note: TensorFlow does not provide a direct equivalent for CPU memory growth
-# but we can set other configurations to manage memory usage efficiently.
-
-# Set CPU memory limit (e.g., 25GB)
-cpu_memory_limit_mb = 25 * 1024  # Convert GB to MB
-
-
-# Set CPU memory limit (e.g., 2GB)
-physical_devices = tf.config.experimental.list_physical_devices('CPU')
-if physical_devices:
-    try:
-        # Configure virtual CPUs
-        tf.config.experimental.set_virtual_device_configuration(
-            physical_devices[0],
-            [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=cpu_memory_limit_mb)]
-        )
-        logical_cpus = tf.config.experimental.list_logical_devices('CPU')
-        print(len(physical_devices), "Physical CPUs,", len(logical_cpus), "Logical CPUs")
-    except RuntimeError as e:
-        print(e)
-
-# Limiting GPU memory growth
-gpus = tf.config.list_physical_devices('GPU')
-if gpus:
-    try:
-        # Currently, memory growth needs to be the same across GPUs
-        for gpu in gpus:
-            tf.config.experimental.set_memory_growth(gpu, True)
-        logical_gpus = tf.config.list_logical_devices('GPU')
-        print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
-    except RuntimeError as e:
-        # Memory growth must be set before GPUs have been initialized
-        print(e)
-
 from tensorflow.keras.saving import custom_object_scope
 
 # gpus = tf.config.list_physical_devices('GPU')
