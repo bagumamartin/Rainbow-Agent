@@ -381,7 +381,7 @@ class Rainbow:
 
 
 
-def load_agent_retrain(path, retrain=False):
+def load_agent(path, retrain=False):
     with open(f'{path}/agent.pkl', 'rb') as file:
         unpickler = dill.Unpickler(file)
         agent = unpickler.load()
