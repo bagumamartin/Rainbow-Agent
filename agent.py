@@ -374,12 +374,14 @@ class Rainbow:
         self.__dict__.update(state)
         retrain = state.get('retrain', False)
         if retrain:
+            print("Retrain flag detected, Loading agent for retraining...")
             self.replay_memory = ReplayMemory(capacity=self.replay_capacity, nb_states=self.nb_states, prioritized=self.prioritized_replay, alpha=self.prioritized_replay_alpha)
             if self.recurrent:
                 self.replay_memory = RNNReplayMemory(window=self.window, capacity=self.replay_capacity, nb_states=self.nb_states, prioritized=self.prioritized_replay, alpha=self.prioritized_replay_alpha)
             if self.multi_steps > 1:
                 self.multi_steps_buffers = [MultiStepsBuffer(self.multi_steps, self.gamma) for _ in range(self.simultaneous_training_env)]
         else:
+            print("Loading agent for inference...")
             # For inference, we don't need to initialize the replay memory or multi-step buffers
             self.replay_memory = None
             self.multi_steps_buffers = None
