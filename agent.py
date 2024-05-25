@@ -394,7 +394,7 @@ def load_agent(path, retrain=True):
 
     # Set retrain flag
     if retrain:
-        agent.retrain = True
+        agent = agent.retrain = True
 
     custom_objects = {"AdversarialModelAgregator": AdversarialModelAgregator}
 
