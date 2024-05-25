@@ -387,7 +387,7 @@ class Rainbow:
             self.multi_steps_buffers = None
 
 
-def load_agent(path, retrain=False):
+def load_agent(path, retrain=True):
     with open(f'{path}/agent.pkl', 'rb') as file:
         unpickler = dill.Unpickler(file)
         agent = unpickler.load()
