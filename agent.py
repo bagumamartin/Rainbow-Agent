@@ -372,19 +372,23 @@ class Rainbow:
 
     def __setstate__(self, state):
         self.__dict__.update(state)
-        self.model = None
-        self.target_model = None
-        self.replay_memory = ReplayMemory(capacity= self.replay_capacity, nb_states= self.nb_states, prioritized = self.prioritized_replay, alpha= self.prioritized_replay_alpha)
-        if self.recurrent:
-            self.replay_memory = RNNReplayMemory(window=self.window, capacity=self.replay_capacity, nb_states=self.nb_states, prioritized=self.prioritized_replay, alpha=self.prioritized_replay_alpha)
-        if self.multi_steps > 1:
-            self.multi_steps_buffers = [MultiStepsBuffer(self.multi_steps, self.gamma) for _ in range(self.simultaneous_training_env)]
+        if state.get('retrain', False):
+            self.replay_memory = ReplayMemory(capacity= self.replay_capacity, nb_states= self.nb_states, prioritized = self.prioritized_replay, alpha= self.prioritized_replay_alpha)
+            if self.recurrent:
+                self.replay_memory = RNNReplayMemory(window=self.window, capacity=self.replay_capacity, nb_states=self.nb_states, prioritized=self.prioritized_replay, alpha=self.prioritized_replay_alpha)
+            if self.multi_steps > 1:
+                self.multi_steps_buffers = [MultiStepsBuffer(self.multi_steps, self.gamma) for _ in range(self.simultaneous_training_env)]
 
 
-def load_agent(path):
+
+def load_agent_retrain(path, retrain=False):
     with open(f'{path}/agent.pkl', 'rb') as file:
         unpickler = dill.Unpickler(file)
         agent = unpickler.load()
+
+    # Set retrain flag
+    if retrain:
+        agent.__dict__['retrain'] = True
 
     custom_objects = {"AdversarialModelAgregator": AdversarialModelAgregator}
 
@@ -393,7 +397,8 @@ def load_agent(path):
         agent.target_model = tf.keras.models.load_model(f'{path}/target_model.keras', compile=False)
 
     # Re-compile the model to restore the optimizer state
-    agent.model.compile(optimizer=tf.keras.optimizers.Adam(agent.learning_rate, epsilon=1.5E-4))
+    if retrain:
+        agent.model.compile(optimizer=tf.keras.optimizers.Adam(agent.learning_rate, epsilon=1.5E-4))
 
     other_elements = {}
     other_pathes = glob.glob(f'{path}/*pkl')
@@ -406,3 +411,4 @@ def load_agent(path):
                 elif ".json" in element_path:other_elements[name] = json.load(file)
             
     return agent, other_elements
+
