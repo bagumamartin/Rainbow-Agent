@@ -35,11 +35,14 @@ class ModelBuilder():
     
     def dense(self, *args, **kwargs):
         # if self.noisy: return tfa.layers.NoisyDense(*args, sigma= 0.1, **kwargs)
-        if self.noisy: 
-            return tf.keras.Sequential([
+        if self.noisy:
+            training = kwargs.pop('training', None)
+            layer = tf.keras.Sequential([
                 tf.keras.layers.Dense(*args, **kwargs),
-                tf.keras.layers.GaussianNoise(stddev=0.1)  # Add GaussianNoise layer with desired stddev
             ])
+            if training:
+                layer.add(tf.keras.layers.GaussianNoise(stddev=0.1))
+            return layer
         return tf.keras.layers.Dense(*args, **kwargs)
         
 
