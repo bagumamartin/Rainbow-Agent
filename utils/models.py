@@ -18,26 +18,6 @@ class AdversarialModelAgregator(tf.keras.Model):
         return outputs
 
 
-# class CustomNoisyDense(tf.keras.layers.Layer):
-#     def __init__(self, units, sigma=0.1, **kwargs):
-#         super(CustomNoisyDense, self).__init__(**kwargs)
-#         self.units = units
-#         self.sigma = sigma
-
-#     def build(self, input_shape):
-#         self.w = self.add_weight(shape=(input_shape[-1], self.units),
-#                                  initializer='random_normal',
-#                                  trainable=True)
-#         self.b = self.add_weight(shape=(self.units,), initializer='zeros', trainable=True)
-
-#     def call(self, inputs, training=False):
-#         if training:
-#             W = self.w + tf.random.normal(self.w.shape, stddev=self.sigma)
-#         else:
-#             W = self.w
-#         return tf.matmul(inputs, W) + self.b
-
-
 class ModelBuilder():
     def __init__(self, units, dropout, nb_states, nb_actions, l2_reg, window, distributional, nb_atoms, adversarial, noisy):
         self.units = units
